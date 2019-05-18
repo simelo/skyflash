@@ -1208,15 +1208,15 @@ class Skyflash(QObject):
         '''Detects and identify the uSD cards in the system OS agnostic'''
 
         # detected drives
-        drives = []
+        self.drives = []
 
         # OS specific listing
         if sys.platform in ["win32", "cygwin"]:
-            drives = self.drivesWin()
+            self.drives = self.drivesWin()
         elif sys.platform.startswith('linux'):
-            drives = self.drivesLinux()
+            self.drives = self.drivesLinux()
         elif sys.platform is "darwin":
-            # drives = self.drivesMac()
+            # self.drives = self.drivesMac()
             logging.debug("Flashing on MacOs is not working yet")
         else:
             # freebsd or others, not supported yet
@@ -1224,15 +1224,20 @@ class Skyflash(QObject):
             pass
 
         # build a user friendly string for the cards if there is a card
-        if drives:
+        if self.drives:
             driveList = []
-            for drive, label, size in drives:
+            for d in self.drives:
+                # conditional unpacking, windows will have 5 and others just 3 elements
+                if len(d) > 3:
+                    drive, label, size, phydrive, dguid = d
+                else:
+                    drive, label, size = d
+
+                # convert size from bytes to GB
                 if size > 0:
                     size = size / 2**30
-                if label == "":
-                    driveList.append("{} {:0.1f}GB".format(drive, size))
-                else:
-                    driveList.append("{} '{}' {:0.1f}GB".format(drive, label, size))
+
+                driveList.append("{} '{}' {:0.1f}GB".format(drive, label, size))
         else:
             driveList = ["Please insert a card"]
 
@@ -1257,7 +1262,6 @@ class Skyflash(QObject):
     def pickCard(self, text):
         '''Set the actual selected card in the combo box'''
         self.card = text.split(" ")[0]
-        print("Selected card is: {}".format(self.card))
 
     @pyqtSlot()
     def imageFlash(self):
@@ -1278,78 +1282,13 @@ class Skyflash(QObject):
         #  start flashing thread
         self.threadpool.start(self.flash)
 
-    def lockWinDevice(self, physicalDevice, volumeGUID):
-
-        # The following enum/macros values were extracted from the winapi
-        '''
-        FILE_READ_DATA: 1
-        FILE_WRITE_DATA: 2
-        FILE_SHARE_READ: 1
-        FILE_SHARE_WRITE: 2
-        OPEN_EXISTING: 3
-        INVALID_HANDLE_VALUE: -1
-        FSCTL_LOCK_VOLUME: 589848
-        FSCTL_DISMOUNT_VOLUME: 589856
-        FORMAT_MESSAGE_FROM_SYSTEM: 4096
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT): 1024
-        '''
-        # Open the device
-        hDevice = CreateFile(physicalDevice, 1|2, 1|2, 0, 3, 0, None)
-        if hDevice == -1:
-            print("Cannot open the device {}. Error code: {}.".format(physicalDevice, GetLastError()))
-            return
-        else:
-            print("Device {} opened.".format(physicalDevice))
-
-        # Open the volume
-        hVolume = CreateFile(volumeGUID, 1|2, 1|2, 0, 3, 0, None)
-        if hDevice == -1:
-            print("Cannot open the volume {}. Error code: {}.".format(volumeGUID, GetLastError()))
-            return
-        else:
-            print("Volume {} opened.".format(volumeGUID))
-
-        # Lock the volume
-        if not DeviceIoControl(hVolume, 589848, None, 0, None, 0, None, None):
-            print("Cannot lock the volume {}. Error code: {}.".format(volumeGUID, GetLastError()))
-            return
-        else:
-            print("Volume {} locked.".format(volumeGUID))
-
-        # Dismount the volume
-        if not DeviceIoControl(hVolume, 589856, None, 0, None, 0, None, None):
-            print("Cannot dismount the volume {}. Error code: {}.".format(volumeGUID, GetLastError()))
-            return
-        else:
-            print("Volume {} dismounted.".format(volumeGUID))
-
-
-        # Lock the device
-        if not DeviceIoControl(hDevice, 589848, None, 0, None, 0, None, None):
-            print("Cannot lock the volume {}. Error code: {}.".format(volumeGUID, GetLastError()))
-            return
-        else:
-            print("Device {} locked.".format(physicalDevice))
-
-        # Dismount the device
-        if not DeviceIoControl(hDevice, 589856, None, 0, None, 0, None, None):
-            print("Cannot dismount the volume {}. Error code: {}.".format(volumeGUID, GetLastError()))
-            return
-        else:
-            print("Device {} dismounted.".format(physicalDevice))
-
-        # Close opened handlers:
-        # CloseHandle(hVolume)
-        # CloseHandle(hDevice)
-        return
-
     def flasher(self, data_callback, progress_callback):
         '''Flash the images
         The actual image to flash is on self.flashingNow [image, name]'''
 
         if sys.platform in ["win32", "cygwin"]:
             # windows
-            self.linuxFlasher(data_callback, progress_callback)
+            self.windowsFlasher(data_callback, progress_callback)
         elif sys.platform == "darwin":
             # mac
             pass
@@ -1370,13 +1309,9 @@ class Skyflash(QObject):
         image = self.builtImages[0]
         name = image.split(os.sep)[-1].split(".")[0]
         size = os.path.getsize(image)
-        source = open(image, 'rb')
 
         # TODO: Need windows device lock to allow raw write
-        physicalDevice = ""
-        volumeGUID     = ""
-        # the label and size are not going no be used
-        for driv, lbl, sz, phyDev, volGUID in drives:
+        for driv, lbl, sz, phyDev, volGUID in self.drives:
             if driv == self.card:
                 physicalDevice = phyDev
                 volumeGUID = volGUID[1:-1] # skip the first character (a blank space ' ') and the last (a backslash '\\')
@@ -1385,10 +1320,13 @@ class Skyflash(QObject):
             print("Cannot find the physical device path or volume GUID path. Aborting...")
             return "Failed"
 
-        lockWinDevice(physicalDevice, volumeGUID)
-        dest = open(self.card, 'wb')
+        # Receive the paths to the physical device device and logical volume and return a handler to each one
+        hDevice, hVolume = lockWinDevice(physicalDevice, volumeGUID)
 
+        # Open the Skybian file using a PyHANDLE (a wrapper to a standard Win32 HANDLE)
+        hInputFile = CreateFile(image, 1, 1, None, 3, 0, None)
         actualPosition = 0
+
         # WARNING! imageConfigAddress must be divisible by 4 for this to work ok
         portionSize = int(imageConfigAddress / 4)
 
@@ -1397,18 +1335,24 @@ class Skyflash(QObject):
         logging.debug("Flashing {} image".format(image))
 
         # build node loop
-        source.seek(actualPosition)
         while actualPosition < size:
-            data = source.read(portionSize)
-            dest.write(data)
+            errorCode, data = ReadFile(inputFileHandle, portionSize)
+            bytesRead = len(data)
+            bytesToAppend = bytesRead % 512 # 512 is device sector size -> TODO: Get it programmatically
+            if bytesToAppend != 0: # If any sector is no going to be totally written...
+                dataToAppend = bytearray(512 - bytesToAppend) # Create a byte array that completes the sector size
+                data += dataToAppend # Append it
+            WriteFile(outputDeviceHandle, data)
 
             # progress and cycle update
-            actualPosition += portionSize
+            actualPosition += bytesRead # Using `bytesRead` instead of `portionSize` (previous commits)
             percent = actualPosition / fileSize
 
             overAll = percent/self.flashCount + self.flashCountDone/self.flashCount
             data = "Flashing {}, {}%|{}".format(name, percent, overAll * 100)
             progress_callback.emit(percent * 100, data)
+        CloseHandle(inputFileHandle)
+        CloseHandle(outputDeviceHandle)
 
         self.builtImages.pop(self.builtImages.index(image))
         self.flashCountDone = self.flashCount - len(self.builtImages)

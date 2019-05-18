@@ -19,10 +19,21 @@ rel = re.compile(' [A-Z]: ')
 
 if 'nt' in os.name:
     import ctypes
+    import win32api
+    import win32file
+
     # some aliases
+    CreateFile = win32file.CreateFile
+    CloseHandle = win32file.CloseHandle
+    DeviceIoControl = win32file.DeviceIoControl
+    #getLogicalDrives = win32file.GetLogicalDrives
     getLogicalDrives = ctypes.windll.kernel32.GetLogicalDrives
+    #getVolumeInformation = win32api.GetVolumeInformation
     getVolumeInformation = ctypes.windll.kernel32.GetVolumeInformationW
+    ReadFile  = win32file.ReadFile
+    WriteFile = win32file.WriteFile
     createUnicodeBuffer = ctypes.create_unicode_buffer
+    sizeof = ctypes.sizeof
 
 def shortenPath(fullpath, ccount):
     '''Shorten a passed FS path to a char count size'''
@@ -232,8 +243,7 @@ def sysexec(cmd):
     return l
 
 def getLetter(logicaldrive):
-    '''
-    Windows Only:
+    '''Windows Only:
     It get the device ID in this format: "Disk #0, Partition #0"
     and answer back with an drive letter matching or a empty str
     if not mounted/used
@@ -260,7 +270,7 @@ def getLetter(logicaldrive):
         return ''
 
 def getLogicalDrive(phydrive):
-    '''
+    '''Windows only
     Get the physical drive (\\\\.\\PHYSICALDRIVE0) name and
     return the logical volumes in a list like this
         Disk #0, Partition #0
@@ -295,11 +305,10 @@ def getLogicalDrive(phydrive):
     return data
 
 def getLabel(d):
-    '''
-    Windows Only:
-
+    '''Windows Only:
     From a drive letter, get the label if proceed
     '''
+
     name_buffer = createUnicodeBuffer(1024)
     filesystem_buffer = createUnicodeBuffer(1024)
     volume_name = ""
@@ -405,6 +414,65 @@ def getPHYDrives():
     # 'size': '8052549120'}]
 
     return data
+
+def lockWinDevice(physicalDevice, volumeGUID):
+
+    # The following enum/macros values were extracted from the winapi
+    '''
+    FILE_READ_DATA: 1
+    FILE_WRITE_DATA: 2
+    FILE_SHARE_READ: 1
+    FILE_SHARE_WRITE: 2
+    OPEN_EXISTING: 3
+    INVALID_HANDLE_VALUE: -1
+    FSCTL_LOCK_VOLUME: 589848
+    FSCTL_DISMOUNT_VOLUME: 589856
+    FORMAT_MESSAGE_FROM_SYSTEM: 4096
+    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT): 1024
+    '''
+
+    # Open the device
+    hDevice = CreateFile(physicalDevice, 1|2, 1|2, None, 3, 0, None)
+    print("Device {} opened.".format(physicalDevice))
+
+    # Open the volume
+    hVolume = CreateFile(volumeGUID, 1|2, 1|2, None, 3, 0, None)
+    print("Volume {} opened.".format(volumeGUID))
+
+    # Lock the volume
+    DeviceIoControl(hVolume, 589848, None, None, None)
+    print("Volume {} locked.".format(volumeGUID))
+
+    # Dismount the volume
+    DeviceIoControl(hVolume, 589856, None, None, None)
+    print("Volume {} dismounted.".format(volumeGUID))
+
+
+    # Lock the device
+    DeviceIoControl(hDevice, 589848, None, None, None)
+    print("Device {} locked.".format(physicalDevice))
+
+    # Dismount the device
+    DeviceIoControl(hDevice, 589856, None, None, None)
+    print("Device {} dismounted.".format(physicalDevice))
+
+    return hDevice, hVolume
+
+def flashWinDevice(inputFileHandle, outputDeviceHandle, bytesToFlash):
+    actualPosition = 0
+    chunkSize = int(imageConfigAddress / 4)
+    while actualPosition < bytesToFlash:
+        errorCode, data = ReadFile(inputFileHandle, chunkSize)
+        bytesRead = len(data)
+        bytesToAppend = bytesRead % 512 # 512 is disk sector size. TODO: Get it programmatically
+        if bytesToAppend != 0: # We must write a full sector
+            dataToAppend = bytearray(512 - bytesToAppend) # Create a byte array that completes the sector size
+            data += dataToAppend # Append it
+        actualPosition += bytesRead
+        print("Progress: {}. {} bytes read. Writting...".format(int(actualPosition/bytesToFlash * 100), len(data)))
+        WriteFile(outputDeviceHandle, data)
+    CloseHandle(inputFileHandle)
+    CloseHandle(outputDeviceHandle)
 
 # fileio overide class to get progress on tarfile extraction
 # TODO How to overide a class from a module
