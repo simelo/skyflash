@@ -1185,13 +1185,17 @@ class Skyflash(QObject):
         data = json.loads(js)
 
         # getting data, output format is: [(drive, "LABEL", total),]
+        print(data)
         for device in data['blockdevices']:
             if device['rm'] == '1':
                 cap = int(device['size'])
                 mounted = ""
-                for c in device['children']:
-                    if c['mountpoint']:
-                        mounted += " ".join([c['mountpoint'].split("/")[-1]])
+                try:
+                    for c in device['children']:
+                        if c['mountpoint']:
+                            mounted += " ".join([c['mountpoint'].split("/")[-1]])
+                except KeyError:
+                    pass
 
                 if len(mounted) <= 0:
                     mounted += "Not in use"
@@ -1322,9 +1326,10 @@ class Skyflash(QObject):
 
         # Receive the paths to the physical device device and logical volume and return a handler to each one
         hDevice, hVolume = lockWinDevice(physicalDevice, volumeGUID)
+        fileSize = os.path.getsize(image)
 
         # Open the Skybian file using a PyHANDLE (a wrapper to a standard Win32 HANDLE)
-        hInputFile = CreateFile(image, 1, 1, None, 3, 0, None)
+        inputFileHandle = CreateFile(image, 1, 1, None, 3, 0, None)
         actualPosition = 0
 
         # WARNING! imageConfigAddress must be divisible by 4 for this to work ok
@@ -1342,17 +1347,19 @@ class Skyflash(QObject):
             if bytesToAppend != 0: # If any sector is no going to be totally written...
                 dataToAppend = bytearray(512 - bytesToAppend) # Create a byte array that completes the sector size
                 data += dataToAppend # Append it
-            WriteFile(outputDeviceHandle, data)
+            WriteFile(hDevice, data)
 
             # progress and cycle update
             actualPosition += bytesRead # Using `bytesRead` instead of `portionSize` (previous commits)
-            percent = actualPosition / fileSize
+            percent = int(actualPosition * 100 / fileSize)
 
             overAll = percent/self.flashCount + self.flashCountDone/self.flashCount
-            data = "Flashing {}, {}%|{}".format(name, percent, overAll * 100)
-            progress_callback.emit(percent * 100, data)
+            data = "Flashing {}, {}%|{}".format(name, percent, overAll)
+            progress_callback.emit(percent, data)
+
+        # close input and output file handles
         CloseHandle(inputFileHandle)
-        CloseHandle(outputDeviceHandle)
+        CloseHandle(hDevice)
 
         self.builtImages.pop(self.builtImages.index(image))
         self.flashCountDone = self.flashCount - len(self.builtImages)
@@ -1414,8 +1421,8 @@ class Skyflash(QObject):
                     if l != '':
                         pr = int(l)
                         if pr > 0:
-                            overAll = pr/100/self.flashCount + self.flashCountDone/self.flashCount
-                            msg = "Flashing {}, {}%|{}".format(name, pr, overAll * 100)
+                            overAll = pr/self.flashCount + self.flashCountDone/self.flashCount
+                            msg = "Flashing {}, {}%|{}".format(name, pr, overAll)
                             progress_callback.emit(pr, msg)
 
                 #  close the log file
