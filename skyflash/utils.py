@@ -460,22 +460,6 @@ def lockWinDevice(physicalDevice, volumeGUID):
 
     return hDevice, hVolume
 
-def flashWinDevice(inputFileHandle, outputDeviceHandle, bytesToFlash):
-    actualPosition = 0
-    chunkSize = int(imageConfigAddress / 4)
-    while actualPosition < bytesToFlash:
-        errorCode, data = ReadFile(inputFileHandle, chunkSize)
-        bytesRead = len(data)
-        bytesToAppend = bytesRead % 512 # 512 is disk sector size. TODO: Get it programmatically
-        if bytesToAppend != 0: # We must write a full sector
-            dataToAppend = bytearray(512 - bytesToAppend) # Create a byte array that completes the sector size
-            data += dataToAppend # Append it
-        actualPosition += bytesRead
-        print("Progress: {}. {} bytes read. Writting...".format(int(actualPosition/bytesToFlash * 100), len(data)))
-        WriteFile(outputDeviceHandle, data)
-    CloseHandle(inputFileHandle)
-    CloseHandle(outputDeviceHandle)
-
 # fileio overide class to get progress on tarfile extraction
 # TODO How to overide a class from a module
 class ProgressFileObject(io.FileIO):
