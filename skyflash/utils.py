@@ -23,17 +23,20 @@ if 'nt' in os.name:
     import win32file
 
     # some aliases
-    CreateFile = win32file.CreateFile
-    CloseHandle = win32file.CloseHandle
     DeviceIoControl = win32file.DeviceIoControl
     #getLogicalDrives = win32file.GetLogicalDrives
     getLogicalDrives = ctypes.windll.kernel32.GetLogicalDrives
     #getVolumeInformation = win32api.GetVolumeInformation
     getVolumeInformation = ctypes.windll.kernel32.GetVolumeInformationW
-    ReadFile  = win32file.ReadFile
-    WriteFile = win32file.WriteFile
     createUnicodeBuffer = ctypes.create_unicode_buffer
     sizeof = ctypes.sizeof
+    
+    # from win32file
+    CreateFile = win32file.CreateFile
+    CloseHandle = win32file.CloseHandle
+    ReadFile  = win32file.ReadFile
+    WriteFile = win32file.WriteFile
+    FlushFileBuffers = win32file.FlushFileBuffers
 
 def shortenPath(fullpath, ccount):
     '''Shorten a passed FS path to a char count size'''
@@ -446,7 +449,6 @@ def lockWinDevice(physicalDevice, volumeGUID):
     # Dismount the volume
     DeviceIoControl(hVolume, 589856, None, None, None)
     print("Volume {} dismounted.".format(volumeGUID))
-
 
     # Lock the device
     DeviceIoControl(hDevice, 589848, None, None, None)

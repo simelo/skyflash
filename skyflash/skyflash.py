@@ -1312,7 +1312,7 @@ class Skyflash(QObject):
         # there are images left to burn, pick the first one
         image = self.builtImages[0]
         name = image.split(os.sep)[-1].split(".")[0]
-        size = os.path.getsize(image)
+        fsize = os.path.getsize(image)
 
         # TODO: Need windows device lock to allow raw write
         for driv, lbl, sz, phyDev, volGUID in self.drives:
@@ -1325,40 +1325,51 @@ class Skyflash(QObject):
             return "Failed"
 
         # Receive the paths to the physical device device and logical volume and return a handler to each one
+        # the handle is via win32api, need a trick as we will do this on a thread.
         hDevice, hVolume = lockWinDevice(physicalDevice, volumeGUID)
-        fileSize = os.path.getsize(image)
 
-        # Open the Skybian file using a PyHANDLE (a wrapper to a standard Win32 HANDLE)
-        inputFileHandle = CreateFile(image, 1, 1, None, 3, 0, None)
+        # Open the Skybian file using the default open function, as it's thread safe. 
+        try:
+            inputFileHandle = open(image, 'rb')
+        except:
+            logging.debug("Error opening the image file.")
+            raise
+
+        # windows needs a write chunk to be multiple of the sector size, aka 512 bytes
+        sectorSize = 512
+        portionSize = sectorSize * 100 # 100 sectors at a time
         actualPosition = 0
-
-        # WARNING! imageConfigAddress must be divisible by 4 for this to work ok
-        portionSize = int(imageConfigAddress / 4)
 
         # user feedback
         data_callback.emit("Flashing {} image".format(name))
         logging.debug("Flashing {} image".format(image))
 
         # build node loop
-        while actualPosition < size:
-            errorCode, data = ReadFile(inputFileHandle, portionSize)
-            bytesRead = len(data)
-            bytesToAppend = bytesRead % 512 # 512 is device sector size -> TODO: Get it programmatically
-            if bytesToAppend != 0: # If any sector is no going to be totally written...
-                dataToAppend = bytearray(512 - bytesToAppend) # Create a byte array that completes the sector size
-                data += dataToAppend # Append it
-            WriteFile(hDevice, data)
+        while actualPosition < fsize:
+            data = inputFileHandle.read(portionSize)
+
+            if len(data) != portionSize:
+                # final part, fill with zeroes until first sectorsize multiple
+                diff = len(data) % sectorSize
+                data += bytearray(sectorSize - diff)
+
+            # Actual write to the device.
+            errorCode, wcount = WriteFile(hDevice, data)
+            
+            if errorCode != 0: 
+                print("Error on write!")
+                print("E: {}".format(errorCode))
 
             # progress and cycle update
-            actualPosition += bytesRead # Using `bytesRead` instead of `portionSize` (previous commits)
-            percent = int(actualPosition * 100 / fileSize)
+            actualPosition += portionSize
+            percent = int(actualPosition * 100 / fsize)
 
             overAll = percent/self.flashCount + self.flashCountDone/self.flashCount
-            data = "Flashing {}, {}%|{}".format(name, percent, overAll)
-            progress_callback.emit(percent, data)
+            mdata = "Flashing {}, {}%|{}".format(name, percent, overAll)
+            progress_callback.emit(percent, mdata)
 
         # close input and output file handles
-        CloseHandle(inputFileHandle)
+        FlushFileBuffers(hDevice)
         CloseHandle(hDevice)
 
         self.builtImages.pop(self.builtImages.index(image))
