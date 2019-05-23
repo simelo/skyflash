@@ -1321,7 +1321,7 @@ class Skyflash(QObject):
                 volumeGUID = volGUID[1:-1] # skip the first character (a blank space ' ') and the last (a backslash '\\')
 
         if physicalDevice == "" or volumeGUID == "":
-            print("Cannot find the physical device path or volume GUID path. Aborting...")
+            logging.debug("Cannot find the physical device path or volume GUID path. Aborting...")
             return "Failed"
 
         # Receive the paths to the physical device device and logical volume and return a handler to each one
@@ -1355,8 +1355,8 @@ class Skyflash(QObject):
 
             # Actual write to the device.
             errorCode, wcount = WriteFile(hDevice, data)
-            
-            if errorCode != 0: 
+
+            if errorCode != 0:
                 print("Error on write!")
                 print("E: {}".format(errorCode))
 

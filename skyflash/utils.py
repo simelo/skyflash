@@ -434,29 +434,32 @@ def lockWinDevice(physicalDevice, volumeGUID):
     MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT): 1024
     '''
 
+    # advice on the log
+    logging.debug("Trying to unlok & unmount the volume and device to flash...")
+
     # Open the device
     hDevice = CreateFile(physicalDevice, 1|2, 1|2, None, 3, 0, None)
-    print("Device {} opened.".format(physicalDevice))
+    logging.debug("Device {} opened.".format(physicalDevice))
 
     # Open the volume
     hVolume = CreateFile(volumeGUID, 1|2, 1|2, None, 3, 0, None)
-    print("Volume {} opened.".format(volumeGUID))
+    logging.debug("Volume {} opened.".format(volumeGUID))
 
     # Lock the volume
     DeviceIoControl(hVolume, 589848, None, None, None)
-    print("Volume {} locked.".format(volumeGUID))
+    logging.debug("Volume {} locked.".format(volumeGUID))
 
     # Dismount the volume
     DeviceIoControl(hVolume, 589856, None, None, None)
-    print("Volume {} dismounted.".format(volumeGUID))
+    logging.debug("Volume {} dismounted.".format(volumeGUID))
 
     # Lock the device
     DeviceIoControl(hDevice, 589848, None, None, None)
-    print("Device {} locked.".format(physicalDevice))
+    logging.debug("Device {} locked.".format(physicalDevice))
 
     # Dismount the device
     DeviceIoControl(hDevice, 589856, None, None, None)
-    print("Device {} dismounted.".format(physicalDevice))
+    logging.debug("Device {} dismounted.".format(physicalDevice))
 
     return hDevice, hVolume
 
