@@ -1,10 +1,10 @@
 matrix:
   include:
     - name: "Xenial Linux with Python 3.6"
-      python: 3.6
+      sudo: required
       os: linux
       dist: xenial
-      language: shell
+      python: 3.6
       env: TARGETOS=linux
 
     - name: "macOS with Python 3.7.2"
