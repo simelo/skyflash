@@ -8,15 +8,15 @@ if [ $1 = 'linux' ]; then
     # linux
     sudo apt update -q
     sudo apt install -y python3 python3-all python3-pip python3-setuptools python3-wheel make
-    pip3 install -U pip3 setuptools PyInstaller
-    pip3 install -r requirements.txt
+    pip3 install --user -U pip3 setuptools PyInstaller
+    pip3 install --user -r requirements.txt
 fi
 
 
 if [ $1 = 'osx' ]; then
     # macos
-    pip3 install -U pip PyInstaller
-    pip3 install -r requirements.txt
+    pip3 install --user -U pip PyInstaller
+    pip3 install --user -r requirements.txt
 fi
 
 
@@ -25,7 +25,7 @@ if [ $1 = 'windows' ]; then
     sudo apt-get update -q
     sudo apt install -y python3 python3-all python3-pip python3-setuptools python3-wheel p7zip-full make
     sudo pip3 install -U pip3
-    pip3 install -r requirements.txt
+    pip3 install --user -r requirements.txt
 
     # pull the docker for windows
     docker pull cdrx/pyinstaller-windows
