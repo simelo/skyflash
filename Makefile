@@ -55,7 +55,7 @@ build: clean ## Build the pip compatible install file
 	ls -lh final/
 
 install: build ## Install the built pip file
-	python3 setup.py install --home=~/python-pkgs
+	python3 setup.py install --user
 
 win-flasher: ## Create the flasher tool for windows (for travis only)
 	cd win-build && docker run --rm -v "$(PWDWIN):/src/" cdrx/pyinstaller-windows
