@@ -1,21 +1,28 @@
 matrix:
   include:
-    - name: "Xenial Linux with Python 3.6"
-      sudo: required
+    - name: "Xenial Linux with Python 3.6 & 3.7"
       os: linux
       dist: xenial
-      python: 3.6
+      sudo: required
+      # explicit python as language: this force the use of virtualenvs to use the right python version
+      language: python
+      python:
+        - "3.6"
+        - "3.7" 
       env: TARGETOS=linux
 
-    - name: "macOS with Python 3.7.2"
+    - name: "macOS with Python 3.6 & 3.7"
       os: osx
       osx_image: xcode10.2
-      language: shell
-      before_install: 
-        - python3 --version ; pip3 --version ; sw_vers
+      sudo: required
+      # explicit python as language: this force the use of virtualenvs to use the right python version
+      language: python
+      python:
+        - "3.6"
+        - "3.7" 
       env: TARGETOS=osx
 
-    - name: "Windows (Wine) over Xenial Linux with Python 3.7.1"
+    - name: "Windows (Wine) over Xenial Linux with Python 3.6.4"
       os: linux
       dist: xenial
       language: shell
