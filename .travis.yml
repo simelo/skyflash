@@ -16,7 +16,7 @@ matrix:
       os: osx
       osx_image: xcode10.2
       sudo: required
-      language: python
+      language: shell
       env: TARGETOS=osx
 
     - name: "Windows (Wine) over Xenial Linux with Python 3.6.4"
