@@ -2,12 +2,12 @@
 # install step in travis, but split by OS, os name is passed as first argument
 
 # Explicit showdown of relevan software
-python3 --version ; pip3 --version ; sw_vers
+python3 --version ; pip3 --version
 
 if [ $1 = 'linux' ]; then
     # linux
     pip3 install -U pip PyInstaller
-    pip3 install -u requirements.txt
+    pip3 install -r requirements.txt
 fi
 
 
@@ -30,4 +30,4 @@ if [ $1 = 'windows' ]; then
 fi
 
 # Explicit showdown of relevan software
-python3 --version ; pip3 --version ; sw_vers
+python3 --version ; pip3 --version
