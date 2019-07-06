@@ -15,10 +15,7 @@ matrix:
       os: osx
       osx_image: xcode10.2
       sudo: required
-      # explicit python as language: this force the use of virtualenvs to use the right python version
       language: python
-      python:
-        - "3.7" 
       env: TARGETOS=osx
 
     - name: "Windows (Wine) over Xenial Linux with Python 3.6.4"
