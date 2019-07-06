@@ -1,9 +1,8 @@
 #!/bin/bash
 # install step in travis, but split by OS, os name is passed as first argument
 
-# WARNING
-# 'python' points to Python 2.7 on macOS but points to Python 3.7 on Linux and Windows
-# 'python3' is a 'command not found' error on Windows but 'py' works on Windows only
+# Explicit showdown of relevan software
+python3 --version ; pip3 --version ; sw_vers
 
 if [ $1 = 'linux' ]; then
     # linux
@@ -23,8 +22,7 @@ fi
 if [ $1 = 'windows' ]; then
     # windows
     sudo apt-get update -q
-    sudo apt install -y python3 python3-all python3-pip python3-setuptools python3-wheel p7zip-full make
-    sudo pip3 install setuptools pyqt5
+    sudo apt install -y p7zip-full
 
     # pull the docker for windows
     docker pull cdrx/pyinstaller-windows
