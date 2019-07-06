@@ -7,7 +7,7 @@ python3 --version ; pip3 --version
 if [ $1 = 'linux' ]; then
     # linux
     sudo apt update -q
-    sudo apt install -y python3 python3-all python3-pip python3-setuptools python3-wheel
+    sudo apt install -y python3 python3-all python3-pip python3-setuptools python3-wheel make
     pip3 install -U pip setuptools PyInstaller
     pip3 install -r requirements.txt
 fi
