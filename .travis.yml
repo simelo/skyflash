@@ -8,6 +8,7 @@ matrix:
       language: python
       python:
         - "3.6"
+      virtualenv: system_site_packages: false
       env:
         - TARGETOS=linux
         - PYTHONPATH="~/.local/lib/python3.6/site-packages/" 
