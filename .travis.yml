@@ -18,7 +18,6 @@ matrix:
       # explicit python as language: this force the use of virtualenvs to use the right python version
       language: python
       python:
-        - "3.6"
         - "3.7" 
       env: TARGETOS=osx
 
