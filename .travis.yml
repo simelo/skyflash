@@ -8,8 +8,9 @@ matrix:
       language: python
       python:
         - "3.6"
-        - "3.7" 
-      env: TARGETOS=linux
+      env:
+        - TARGETOS=linux
+        - PYTHONPATH="~/.local/lib/python3.6/site-packages/" 
 
     - name: "macOS with Python 3.6 & 3.7"
       os: osx
@@ -24,7 +25,9 @@ matrix:
       language: shell
       services:
         - docker
-      env: TARGETOS=windows
+      env:
+        - TARGETOS=windows
+        - PYTHONPATH="~/.local/lib/python3.5/site-packages/" 
 
 # install dependencies depending on the OS
 install: 
