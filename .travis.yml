@@ -1,6 +1,6 @@
 matrix:
   include:
-    - name: "Xenial Linux with Python 3.6 & 3.7"
+    - name: "Xenial Linux with Python 3.6"
       os: linux
       dist: xenial
       sudo: required

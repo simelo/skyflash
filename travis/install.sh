@@ -25,6 +25,8 @@ if [ $1 = 'windows' ]; then
     sudo apt-get update -q
     sudo apt install -y python3 python3-all python3-pip python3-setuptools python3-wheel p7zip-full make
     sudo pip3 install -U pip3
+    # pywin32 must be aded last, as it will only work if on a windows system
+    echo "pywin32 >= 223" >> requirements.txt
     pip3 install --user -r requirements.txt
 
     # pull the docker for windows
