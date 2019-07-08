@@ -95,4 +95,3 @@ deploy:
     on:
       all_branches: true
       condition: "$TARGETOS = windows && $TRAVIS_BRANCH =~ ^master$|^release-.*$"
-
