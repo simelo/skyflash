@@ -4,7 +4,7 @@ matrix:
       os: linux
       dist: xenial
       sudo: required
-      # explicit python as language: this force the use of virtualenvs to use the right python version
+      # explicit python as language: this force the use of virtual envs to use the right python version
       language: python
       python:
         - "3.6"
