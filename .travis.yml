@@ -37,6 +37,7 @@ install:
 script:
   - make init
   - make build
+  - make install
 
 notifications:
   email: false
