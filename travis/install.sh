@@ -9,7 +9,7 @@ if [ $1 = 'linux' ]; then
     # linux
     sudo apt-get update -q
     sudo apt install -y python3 python3-all python3-pip python3-setuptools python3-wheel make
-    sudo pip3 install setuptools pyqt5 PyInstaller
+    pip3 install setuptools pyqt5 PyInstaller
 fi
 
 
