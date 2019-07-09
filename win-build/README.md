@@ -21,13 +21,13 @@ This is the configuration file that will be embedded in the final app to customi
 
 You can create the docker image to generate the Windows .exe file for testing purposes with the info in the [Docker](https://github.com/skycoin/skyflash/docker/win64py3/) folder, for the moment only the 64bits exe is generated.
 
-To build the local Docker machine (suggested name is 'pyinstaller-win64py3:pyqt_winapi') you must have a functional docker install on your linux distro and run this command in the console *from the mentioned docker folder where the Dockerfile resides*:
+To build the local Docker machine (suggested name is 'pyinstaller-win64py3:skyflash') you must have a functional docker install on your linux distro and run this command in the console *from the mentioned docker folder where the Dockerfile resides*:
 
 ```sh
-docker build -t "pyinstaller-win64py3:pyqt_winapi" ./
+docker build -t "pyinstaller-win64py3:skyflash" ./
 ```
 
-The name is tied to the specific targets on the Makefile, so ***Do not change it*, to know more about it run `make help` in the root project folder
+The name is tied to the specific targets on the Makefile, so ***Do not change it*, to know more about it run `make help` in the root project folder. There is a target for that and more, it will took care of install and build the docker image, simply run `make deps-windows`
 
 ## Flash utility tool
 
