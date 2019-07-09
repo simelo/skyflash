@@ -23,7 +23,7 @@ fi
 if [ $1 = 'windows' ]; then
     # windows
     sudo apt-get update -q
-    sudo apt install -y python3 python3-all python3-pip python3-setuptools python3-wheel p7zip-full make
+    sudo apt install -y make
     sudo pip3 install setuptools pyqt5
 
     # pull the docker for windows
